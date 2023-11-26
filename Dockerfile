@@ -20,4 +20,4 @@ RUN npm run build
 CMD ["npm", "run", "build"]
 
 # Exponiere den Port, auf dem die Anwendung läuft (standardmäßig 8080 für Vue)
-EXPOSE 7000
+EXPOSE 3000

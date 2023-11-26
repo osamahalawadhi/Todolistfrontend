@@ -1,23 +1,32 @@
-# Verwende ein Node-Image als Basis
-FROM node:14
+# Use the official node runtime as a parent image
+FROM node:14 as build-stage
 
-# Setze das Arbeitsverzeichnis innerhalb des Containers
-WORKDIR /usr/src/app
+# Set the working directory in the container to /app
+WORKDIR /app
 
-# Kopiere die package.json-Datei und die package-lock.json-Datei in das Arbeitsverzeichnis
+# Copy the package.json and package-lock.json before other files
+# Utilize Docker cache to save re-installing dependencies if unchanged
 COPY package*.json ./
 
-# Installiere die Abhängigkeiten
+# Install the dependencies
 RUN npm install
 
-# Kopiere den Rest des Codes in das Arbeitsverzeichnis
+# Copy the current directory contents into the container at /app
 COPY . .
 
-# Baue die Anwendung
+# Build the app
 RUN npm run build
 
-# Setze den Befehl zum Starten der Anwendung beim Containerstart
-CMD ["npm", "run", "build"]
+# Use nginx to serve the build
+FROM nginx:latest as production-stage
 
-# Exponiere den Port, auf dem die Anwendung läuft (standardmäßig 8080 für Vue)
+# Set nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy the build app to nginx
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+
+# Expose port 81
 EXPOSE 3000
+
+CMD ["nginx", "-g", "daemon off;"]

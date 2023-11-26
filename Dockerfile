@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Setze den Befehl zum Starten der Anwendung beim Containerstart
-CMD ["npm", "run", "serve"]
+CMD ["npm", "run", "build"]
 
 # Exponiere den Port, auf dem die Anwendung läuft (standardmäßig 8080 für Vue)
-EXPOSE 8080
+EXPOSE 7000

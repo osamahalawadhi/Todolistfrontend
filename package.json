@@ -2,12 +2,18 @@
   "name": "todolist-frontend",
   "version": "0.1.0",
   "private": true,
+  "engine": {
+    "node": "21.x",
+    "npm":"10.x"
+
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
   },
+
   "dependencies": {
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.3.2",

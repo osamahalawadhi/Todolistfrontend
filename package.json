@@ -5,7 +5,6 @@
   "engine": {
     "node": "21.x",
     "npm":"10.x"
-
   },
   "scripts": {
     "serve": "vue-cli-service serve",

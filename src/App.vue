@@ -1,15 +1,19 @@
-<template>
-<Navbar></Navbar>
-  <router-view/>
-</template>
-<script>
-import Navbar from '@/components/Navbar.vue'
-
-export default {
-  name: 'App',
-  components: { Navbar }
-}
+<script setup>
+import { RouterLink, RouterView } from 'vue-router'
 </script>
+
+<template>
+  <header>
+    <div>
+      <nav>
+        <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/about">About</RouterLink>
+      </nav>
+    </div>
+  </header>
+
+  <RouterView />
+</template>
 <style>
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;

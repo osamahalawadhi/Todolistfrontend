@@ -2,21 +2,37 @@
   <div>
     <h3>{{ title }}</h3>
     <div>
-      <input v-model="taskField" placeholder="Name" type="text" @keyup.enter="add()">
+      <input v-model="titleField" placeholder="add your task" type="text" >
+      <input v-model="completedField" placeholder="add your task" type="text" @keyup.enter="add()">
       <button type="button" @click="add()">Add</button>
     </div>
     <div>
       <table>
+        <thead>
+        <tr>
+          <th>title</th>
+          <th>completed</th>
+        </tr>
+        </thead>
         <tbody>
         <tr v-if="items.length === 0">
           <td colspan="2">No task yet</td>
         </tr>
         <tr v-for="item in items" :key="item.id">
           <td>{{ item.title }}</td>
+          <td>{{ item.completed }}</td>
+        </tr>
+        <tr>
+          <td>{{ titleField }}</td>
+          <td>{{ completedField }}</td>
         </tr>
         </tbody>
       </table>
     </div>
+  </div>
+  <div class="container">
+    <div class="todo-app"></div>
+      <h2>TodoList</h2>
   </div>
 </template>
 
@@ -29,7 +45,8 @@ export default {
   },
   setup () {
     const items = ref([])
-    const taskField = ref('')
+    const titleField = ref('')
+    const completedField = ref(false)
 
     function loadTasks () {
       const endpoint = process.env.VUE_APP_BACKEND_BASE_URL + '/api/a1/task'
@@ -58,7 +75,8 @@ export default {
       myHeaders.append('Content-Type', 'application/json')
 
       const raw = JSON.stringify({
-        title: taskField.value
+        title: titleField.value,
+        completed: completedField.value
       })
 
       const requestOptions = {
@@ -73,13 +91,17 @@ export default {
           if (!response.ok) {
             throw new Error(`Network response was not ok. Status: ${response.status}, ${response.statusText}`)
           }
-          return response.json()
+          return response.text() // Änderung: Text statt JSON
         })
         .then((data) => {
-          console.log('Success:', data)
-          items.value.push(data)
-          // Optional: Clear the input field after successful addition
-          taskField.value = ''
+          if (data.trim() !== '') {
+            // Prüfen, ob die Antwort nicht leer ist, bevor sie geparsed wird
+            const jsonData = JSON.parse(data)
+            console.log('Success:', jsonData)
+            items.value.push(jsonData)
+            titleField.value = ''
+            // Optional: Clear the input fields after successful addition
+          }
         })
         .catch((error) => console.error('Error adding task:', error))
     }
@@ -91,7 +113,8 @@ export default {
 
     return {
       items,
-      taskField,
+      titleField,
+      completedField,
       add
     }
   }
@@ -109,4 +132,5 @@ table {
 button {
   color: blue;
 }
+
 </style>

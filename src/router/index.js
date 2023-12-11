@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import Tasks from '../views/Tasks.vue'
+
 const routes = [
   {
     path: '/',
@@ -14,11 +14,6 @@ const routes = [
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import('../views/AboutView.vue')
-  },
-  {
-    path: '/persons',
-    name: 'Tasks',
-    component: Tasks
   }
 ]
 

@@ -5,19 +5,19 @@
         <input v-model="title" placeholder="Task to be Done.." type="text"/>
         <button id="add-btn" @click="addTask">Add</button>
       </div>
-      <div id="tasks">
-        <p id="pending-tasks">
-          You have <span class="count-value">{{ taskCount }}</span> task(s) to complete.
-        </p>
-        <ul>
-          <li v-for="task in tasks" :key="task.id">
-            {{ task.title }}
-            <button @click="editTask(task)">Edit</button>
+      <div>
+        <ul class="list-group"  v-for="task in tasks" :key="task.id">
+          <li class="list-group-item d-flex align-items-center flex-wrap flex-basis-0">
+            <input class="form-check-input me-1" type="radio" name="listGroupRadio" value="" id="tasks" checked>
+            <label class="form-check-label" for="tasks">{{ task.title }}</label>
+            <div class="buttons ">
+              <button @click="editTask(task)">Edit</button>
+              <button @click="deleteTask(task)">Delete</button>
+            </div>
           </li>
         </ul>
       </div>
     </div>
-    <p id="error" v-if="errorVisible">Input cannot be empty!</p>
   </div>
 </template>
 
@@ -112,18 +112,24 @@ export default {
       this.editingTask = task
       this.title = task.title
     },
+    async deleteTask (task) {
+      const endpoint = `${process.env.VUE_APP_BACKEND_BASE_URL}/api/a1/task/${task.id}`
+      const myHeaders = new Headers()
+      myHeaders.append('Content-Type', 'application/json')
 
-    async fetchTaskCount () {
-      try {
-        const endpoint = process.env.VUE_APP_BACKEND_BASE_URL + '/api/a1/task/count'
-        const response = await fetch(endpoint)
-        const result = await response.json()
-        this.taskCount = result.count
-      } catch (error) {
-        console.log('error', error)
+      const requestOptions = {
+        method: 'DELETE',
+        headers: myHeaders,
+        redirect: 'follow'
       }
-    },
 
+      const response = await fetch(endpoint, requestOptions)
+      const result = await response.text()
+      console.log(result)
+
+      this.fetchTasks()
+      this.fetchTaskCount()
+    },
     async fetchTasks () {
       try {
         const endpoint = process.env.VUE_APP_BACKEND_BASE_URL + '/api/a1/task'
@@ -137,7 +143,6 @@ export default {
   },
 
   mounted () {
-    this.fetchTaskCount()
     this.fetchTasks()
   }
 }
@@ -151,7 +156,7 @@ export default {
 
 .app {
   min-height: 100vh;
-  background: linear-gradient(#fffff0, #fffacd);
+  background: linear-gradient(white, white);
   font-family: "Poppins", sans-serif;
   width: min(95vw, 31.25em);
   margin: auto;
@@ -205,14 +210,32 @@ export default {
 #pending-tasks {
   color: #111111;
 }
-
-#error {
-  text-align: center;
-  background-color: #ffffff;
-  color: #ff5c5c;
-  margin-top: 1.5em;
-  padding: 1em 0;
-  border-radius: 0.8em;
-  display: none;
+.list-group {
+  flex-wrap: wrap;
+  flex-basis: 0;
 }
+.list-group-item {
+  display: flex;
+  align-items: center;
+}
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: -23px;
+  margin-bottom:0.1rem;
+  margin-left: 3rem;
+  margin-right: 0;
+}
+
+.list-group-item {
+  margin-bottom: 1rem;
+}
+
+.form-check-label{
+  margin-left: 2rem;
+  margin-top: 1rem;
+  position: relative;
+}
+
 </style>

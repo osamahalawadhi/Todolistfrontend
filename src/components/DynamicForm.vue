@@ -6,12 +6,19 @@
         <input v-model="title" placeholder="Task to be Done.." type="text"/>
         <button id="add-btn" @click="addTask">Add</button>
       </div>
-      <div>
+      <div id="tasks">
         <ul class="list-group"  v-for="task in tasks" :key="task.id">
           <li class="list-group-item d-flex align-items-center flex-wrap flex-basis-0">
-            <input class="form-check-input me-1" type="radio" name="listGroupRadio" value="" id="tasks" checked>
-            <label class="form-check-label" for="tasks">{{ task.title }}</label>
-            <div class="buttons ">
+            <input
+                class="form-check-input me-1"
+                type="checkbox"
+                v-model="task.completed"
+                @change="updateTaskCompletion(task)"
+            />
+            <label class="form-check-label" :class="{ completed: task.completed }" for="tasks">
+              {{ task.title }}
+            </label>
+            <div class="buttons d-flex justify-content: center flex-basis: auto; margin-left: 0; margin-right: 0;">
               <button @click="editTask(task)">Edit</button>
               <button @click="deleteTask(task)">Delete</button>
             </div>
@@ -53,7 +60,7 @@ export default {
 
         this.title = ''
         this.errorVisible = false
-        this.fetchTaskCount()
+        this.completed = false
         this.fetchTasks()
 
         // Zurücksetzen des Bearbeitungsstatus
@@ -64,54 +71,75 @@ export default {
     },
 
     async createTask () {
-      const endpoint = process.env.VUE_APP_BACKEND_BASE_URL + '/api/a1/task'
-      const myHeaders = new Headers()
-      myHeaders.append('Content-Type', 'application/json')
+      try {
+        const endpoint = process.env.VUE_APP_BACKEND_BASE_URL + '/api/a1/task'
+        const myHeaders = new Headers()
+        myHeaders.append('Content-Type', 'application/json')
 
-      const payload = JSON.stringify({
-        title: this.title,
-        completed: this.completed
-      })
+        const payload = JSON.stringify({
+          title: this.title,
+          completed: this.completed
+        })
 
-      const requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: payload,
-        redirect: 'follow'
+        const requestOptions = {
+          method: 'POST',
+          headers: myHeaders,
+          body: payload,
+          redirect: 'follow'
+        }
+
+        const response = await fetch(endpoint, requestOptions)
+        const result = await response.text()
+        console.log(result)
+
+        // Nach dem Hinzufügen sofort die Tasks aktualisieren
+        this.fetchTasks()
+      } catch (error) {
+        console.error('Error creating task:', error)
       }
-
-      const response = await fetch(endpoint, requestOptions)
-      const result = await response.text()
-      console.log(result)
     },
 
     async updateTask (task) {
-      const endpoint = `${process.env.VUE_APP_BACKEND_BASE_URL}/api/a1/task/${task.id}`
-      const myHeaders = new Headers()
-      myHeaders.append('Content-Type', 'application/json')
+      try {
+        const endpoint = `${process.env.VUE_APP_BACKEND_BASE_URL}/api/a1/task/${task.id}`
+        const myHeaders = new Headers()
+        myHeaders.append('Content-Type', 'application/json')
 
-      const raw = JSON.stringify({
-        id: task.id,
-        title: this.title, // Verwende den Titel aus dem Formular
-        completed: task.completed
-      })
+        const raw = JSON.stringify({
+          id: task.id,
+          title: task.title,
+          completed: task.completed
+        })
 
-      const requestOptions = {
-        method: 'PUT',
-        headers: myHeaders,
-        body: raw,
-        redirect: 'follow'
+        const requestOptions = {
+          method: 'PUT',
+          headers: myHeaders,
+          body: raw,
+          redirect: 'follow'
+        }
+
+        const response = await fetch(endpoint, requestOptions)
+
+        if (!response.ok) {
+          throw new Error(
+              `Network response was not ok. Status: ${response.status}, ${response.statusText}`
+          )
+        }
+
+        const result = await response.text()
+        console.log(result)
+
+        // Fetche die Tasks nach der Aktualisierung
+        this.fetchTasks()
+      } catch (error) {
+        console.error('Error updating task:', error)
       }
-
-      const response = await fetch(endpoint, requestOptions)
-      const result = await response.text()
-      console.log(result)
     },
-
     editTask (task) {
       // Setze den zu bearbeitenden Task und fülle das Formular mit seinen Daten
       this.editingTask = task
       this.title = task.title
+      this.completed = task.completed
     },
     async deleteTask (task) {
       const endpoint = `${process.env.VUE_APP_BACKEND_BASE_URL}/api/a1/task/${task.id}`
@@ -129,7 +157,6 @@ export default {
       console.log(result)
 
       this.fetchTasks()
-      this.fetchTaskCount()
     },
     async fetchTasks () {
       try {

@@ -1,21 +1,22 @@
-
 <template>
   <div class="app">
     <div class="container">
       <div id="wrapper">
-        <input v-model="title" placeholder="Task to be Done.." type="text"/>
-        <button id="add-btn" @click="addTask">Add</button>
+        <input v-model="title" placeholder="Task to be Done.." type="text" />
+        <button id="add-btn" @click="editingTask ? updateTask() : createTask()">
+          {{ editingTask ? 'Update' : 'Add' }}
+        </button>
       </div>
       <div id="tasks">
-        <ul class="list-group"  v-for="task in tasks" :key="task.id">
+        <ul class="list-group" v-for="task in tasks" :key="task.id">
           <li class="list-group-item d-flex align-items-center flex-wrap flex-basis-0">
             <input
                 class="form-check-input me-1"
                 type="checkbox"
                 v-model="task.completed"
-                @change="updateTaskCompletion(task)"
+                @change="updateTaskStatus(task)"
             />
-            <label class="form-check-label" :class="{ completed: task.completed }" for="tasks">
+            <label class="form-check-label" :class="{ 'completed-task': task.completed }" for="tasks">
               {{ task.title }}
             </label>
             <div class="buttons d-flex justify-content: center flex-basis: auto; margin-left: 0; margin-right: 0;">
@@ -37,39 +38,11 @@ export default {
       title: '',
       completed: false,
       errorVisible: false,
-      taskCount: 0,
       tasks: [],
       editingTask: null
     }
   },
   methods: {
-    async addTask () {
-      try {
-        if (!this.title.trim()) {
-          this.errorVisible = true
-          return
-        }
-
-        if (this.editingTask) {
-          // Bearbeiten des bestehenden Tasks
-          await this.updateTask(this.editingTask)
-        } else {
-          // Hinzufügen eines neuen Tasks
-          await this.createTask()
-        }
-
-        this.title = ''
-        this.errorVisible = false
-        this.completed = false
-        this.fetchTasks()
-
-        // Zurücksetzen des Bearbeitungsstatus
-        this.editingTask = null
-      } catch (error) {
-        console.log('error', error)
-      }
-    },
-
     async createTask () {
       try {
         const endpoint = process.env.VUE_APP_BACKEND_BASE_URL + '/api/a1/task'
@@ -78,7 +51,7 @@ export default {
 
         const payload = JSON.stringify({
           title: this.title,
-          completed: this.completed
+          completed: this.completed // Hier wird das completed-Attribut auf this.completed gesetzt
         })
 
         const requestOptions = {
@@ -98,49 +71,6 @@ export default {
         console.error('Error creating task:', error)
       }
     },
-
-    async updateTask (task) {
-      try {
-        const endpoint = `${process.env.VUE_APP_BACKEND_BASE_URL}/api/a1/task/${task.id}`
-        const myHeaders = new Headers()
-        myHeaders.append('Content-Type', 'application/json')
-
-        const raw = JSON.stringify({
-          id: task.id,
-          title: task.title,
-          completed: task.completed
-        })
-
-        const requestOptions = {
-          method: 'PUT',
-          headers: myHeaders,
-          body: raw,
-          redirect: 'follow'
-        }
-
-        const response = await fetch(endpoint, requestOptions)
-
-        if (!response.ok) {
-          throw new Error(
-              `Network response was not ok. Status: ${response.status}, ${response.statusText}`
-          )
-        }
-
-        const result = await response.text()
-        console.log(result)
-
-        // Fetche die Tasks nach der Aktualisierung
-        this.fetchTasks()
-      } catch (error) {
-        console.error('Error updating task:', error)
-      }
-    },
-    editTask (task) {
-      // Setze den zu bearbeitenden Task und fülle das Formular mit seinen Daten
-      this.editingTask = task
-      this.title = task.title
-      this.completed = task.completed
-    },
     async deleteTask (task) {
       const endpoint = `${process.env.VUE_APP_BACKEND_BASE_URL}/api/a1/task/${task.id}`
       const myHeaders = new Headers()
@@ -155,8 +85,73 @@ export default {
       const response = await fetch(endpoint, requestOptions)
       const result = await response.text()
       console.log(result)
-
       this.fetchTasks()
+    },
+    async editTask (task) {
+      this.editingTask = task
+      this.title = task.title
+      this.completed = task.completed
+    },
+    async updateTask () {
+      try {
+        const endpoint = `${process.env.VUE_APP_BACKEND_BASE_URL}/api/a1/task/${this.editingTask.id}`
+        const myHeaders = new Headers()
+        myHeaders.append('Content-Type', 'application/json')
+
+        const payload = JSON.stringify({
+          title: this.title,
+          completed: this.completed
+        })
+
+        const requestOptions = {
+          method: 'PUT',
+          headers: myHeaders,
+          body: payload,
+          redirect: 'follow'
+        }
+
+        const response = await fetch(endpoint, requestOptions)
+        const result = await response.text()
+        console.log(result)
+
+        // Nach dem Aktualisieren sofort die Tasks aktualisieren
+        this.fetchTasks()
+
+        // Zurücksetzen des Bearbeitungszustands
+        this.editingTask = null
+        this.title = ''
+        this.completed = false
+      } catch (error) {
+        console.error('Error updating task:', error)
+      }
+    },
+    async updateTaskStatus (task) {
+      try {
+        const endpoint = `${process.env.VUE_APP_BACKEND_BASE_URL}/api/a1/task/${task.id}`
+        const myHeaders = new Headers()
+        myHeaders.append('Content-Type', 'application/json')
+
+        const payload = JSON.stringify({
+          title: task.title,
+          completed: task.completed
+        })
+
+        const requestOptions = {
+          method: 'PUT',
+          headers: myHeaders,
+          body: payload,
+          redirect: 'follow'
+        }
+
+        const response = await fetch(endpoint, requestOptions)
+        const result = await response.text()
+        console.log(result)
+
+        // Nach dem Aktualisieren sofort die Tasks aktualisieren
+        this.fetchTasks()
+      } catch (error) {
+        console.error('Error updating task status:', error)
+      }
     },
     async fetchTasks () {
       try {
@@ -264,6 +259,9 @@ export default {
   margin-left: 2rem;
   margin-top: 1rem;
   position: relative;
+}
+.completed-task{
+  text-decoration: line-through;
 }
 
 </style>

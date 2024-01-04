@@ -2,7 +2,6 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import DynamicForm from '@/components/DynamicForm.vue'
 
 describe('DynamicForm.vue', () => {
-  const emptyResponse = []
   const twoItemResponse = [
     { id: 1, title: 'HA abgeben', completed: true },
     { id: 2, title: 'Job suchen', completed: false }

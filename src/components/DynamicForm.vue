@@ -2,10 +2,13 @@
   <div class="app">
     <div class="container">
       <div id="wrapper">
-        <input v-model="title" placeholder="Task to be Done.." type="text" />
+        <input type="text"  class="form-control is-invalid" id="title" placeholder="Task to be Done.." v-model="title"  />
         <button id="add-btn" @click="editingTask ? updateTask() : createTask()">
           {{ editingTask ? 'Update' : 'Add' }}
         </button>
+        <div v-if="errorVisible" class="error-message">
+          Task title cannot be empty.
+        </div>
       </div>
       <div id="tasks">
         <ul class="list-group" v-for="task in tasks" :key="task.id">
@@ -13,9 +16,13 @@
             <input
                 class="form-check-input me-1"
                 type="checkbox"
+                id="title"
                 v-model="task.completed"
                 @change="updateTaskStatus(task)"
-            />
+                required />
+            <div class="invalid-feedback">
+              Please provide a task.
+            </div>
             <label class="form-check-label" :class="{ 'completed-task': task.completed }" for="tasks">
               {{ task.title }}
             </label>
@@ -45,6 +52,10 @@ export default {
   methods: {
     async createTask () {
       try {
+        if (!this.title.trim()) {
+          this.errorVisible = true
+          return
+        }
         const endpoint = process.env.VUE_APP_BACKEND_BASE_URL + '/api/a1/task'
         const myHeaders = new Headers()
         myHeaders.append('Content-Type', 'application/json')
@@ -170,6 +181,7 @@ export default {
   }
 }
 </script>
+
 <style scoped>
 * {
   padding: 0;
@@ -193,7 +205,6 @@ export default {
   box-shadow: 0 1em 2em rgba(0, 0, 0, 0.3);
   border-radius: 0.8em;
 }
-
 #wrapper {
   display: grid;
   grid-template-columns: 8fr 4fr;
@@ -210,7 +221,6 @@ export default {
   padding: 1em 0.5em;
   outline: none;
 }
-
 #wrapper input:focus {
   border-color: #5a05ff;
 }
@@ -229,6 +239,14 @@ export default {
 #tasks {
   margin-top: 1em;
 }
+.error-message {
+  text-align: center;
+  background-color: white;
+  margin-top: 0.5em;
+  padding:1em 0;
+  color: red;
+  border-radius: 0.8em;
+}
 
 #pending-tasks {
   color: #111111;
@@ -245,12 +263,8 @@ export default {
   display: flex;
   justify-content: flex-end;
   width: 100%;
-  margin-top: -23px;
-  margin-bottom:0.1rem;
-  margin-left: 3rem;
-  margin-right: 0;
+  margin: -23px 0 0.1rem 3rem;
 }
-
 .list-group-item {
   margin-bottom: 1rem;
 }
@@ -263,5 +277,4 @@ export default {
 .completed-task{
   text-decoration: line-through;
 }
-
 </style>

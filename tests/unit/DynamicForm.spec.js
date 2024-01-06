@@ -6,6 +6,7 @@ describe('DynamicForm.vue', () => {
     { id: 1, title: 'HA abgeben', completed: true },
     { id: 2, title: 'Job suchen', completed: false }
   ]
+
   it('should render the items from the backend', async () => {
     fetch.mockResponseOnce(JSON.stringify(twoItemResponse))
 

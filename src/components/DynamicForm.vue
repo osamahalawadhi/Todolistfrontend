@@ -2,7 +2,7 @@
   <div class="app">
     <div class="container">
       <div id="wrapper">
-        <input type="text"  class="form-control is-invalid" id="title" placeholder="Task to be Done.." v-model="title"  />
+        <input type="text"  data-test="todo" class="form-control is-invalid" id="title" placeholder="Task to be Done.." v-model="title"  />
         <button id="add-btn" @click="editingTask ? updateTask() : createTask()">
           {{ editingTask ? 'Update' : 'Add' }}
         </button>
@@ -16,6 +16,7 @@
             <input
                 class="form-check-input me-1"
                 type="checkbox"
+                data-test="todo-checkbox"
                 id="title"
                 v-model="task.completed"
                 @change="updateTaskStatus(task)"
@@ -23,12 +24,12 @@
             <div class="invalid-feedback">
               Please provide a task.
             </div>
-            <label class="form-check-label" :class="{ 'completed-task': task.completed }" for="tasks">
+            <label class="form-check-label"  :class="{ 'completed-task': task.completed }" for="tasks">
               {{ task.title }}
             </label>
             <div class="buttons d-flex justify-content: center flex-basis: auto; margin-left: 0; margin-right: 0;">
-              <button @click="editTask(task)">Edit</button>
-              <button @click="deleteTask(task)">Delete</button>
+              <button id="edit-btn" @click="editTask(task)">Edit</button>
+              <button id="del-btn" @click="deleteTask(task.id)">Delete</button>
             </div>
           </li>
         </ul>
@@ -53,6 +54,7 @@ export default {
     async createTask () {
       try {
         if (!this.title.trim()) {
+          console.log('Error: Task title is empty.')
           this.errorVisible = true
           return
         }
@@ -78,6 +80,7 @@ export default {
         this.errorVisible = false
         // Nach dem Hinzufügen sofort die Tasks aktualisieren
         this.fetchTasks()
+        this.title = ''
       } catch (error) {
         console.error('Error creating task:', error)
       }
@@ -99,6 +102,7 @@ export default {
       this.fetchTasks()
     },
     async editTask (task) {
+      console.log('Editing task:', task)
       this.editingTask = task
       this.title = task.title
       this.completed = task.completed
@@ -111,7 +115,7 @@ export default {
 
         const payload = JSON.stringify({
           title: this.title,
-          completed: this.completed
+          completed: this.editingTask.completed
         })
 
         const requestOptions = {
@@ -126,12 +130,11 @@ export default {
         console.log(result)
 
         // Nach dem Aktualisieren sofort die Tasks aktualisieren
-        this.fetchTasks()
+        await this.fetchTasks()
 
         // Zurücksetzen des Bearbeitungszustands
         this.editingTask = null
         this.title = ''
-        this.completed = false
       } catch (error) {
         console.error('Error updating task:', error)
       }
@@ -159,7 +162,7 @@ export default {
         console.log(result)
 
         // Nach dem Aktualisieren sofort die Tasks aktualisieren
-        this.fetchTasks()
+        await this.fetchTasks()
       } catch (error) {
         console.error('Error updating task status:', error)
       }

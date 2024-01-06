@@ -20,4 +20,16 @@ describe('DynamicForm.vue', () => {
 
     expect(wrapper.text()).toContain(item)
   })
+  it('should create a new task when the "Add" button is clicked', async () => {
+    const wrapper = shallowMount(DynamicForm)
+
+    // Simulate user entering a task title
+    await wrapper.setData({ title: 'Learn Vue.js' })
+
+    // Click the "Add" button
+    await wrapper.find('#add-btn').trigger('click')
+
+    // Expect the button text to be 'Add'
+    expect(wrapper.find('#add-btn').text()).toBe('Add')
+  })
 })

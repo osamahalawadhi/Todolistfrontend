@@ -75,7 +75,7 @@ export default {
         const response = await fetch(endpoint, requestOptions)
         const result = await response.text()
         console.log(result)
-
+        this.errorVisible = false
         // Nach dem Hinzufügen sofort die Tasks aktualisieren
         this.fetchTasks()
       } catch (error) {

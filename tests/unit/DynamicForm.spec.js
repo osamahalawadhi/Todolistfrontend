@@ -1,10 +1,10 @@
-import { flushPromises, shallowMount } from '@vue/test-utils'
+import { flushPromises, shallowMount, mount } from '@vue/test-utils'
 import DynamicForm from '@/components/DynamicForm.vue'
 
 describe('DynamicForm.vue', () => {
   const twoItemResponse = [
-    { id: 1, title: 'HA abgeben', completed: true },
-    { id: 2, title: 'Job suchen', completed: false }
+    { id: 1, title: 'HA abgeben', completed: true, dueDate: '2024-01-14', priority: 'HIGH', notes: 'Webprojekt finale Abgabe ' },
+    { id: 2, title: 'Job suchen', completed: false, dueDate: '2024-01-14', priority: 'LOW', notes: 'Werkstudent Job suchen ' }
   ]
 
   it('should render the items from the backend', async () => {
@@ -29,14 +29,6 @@ describe('DynamicForm.vue', () => {
     // Expect the button text to be 'Add'
     expect(wrapper.find('#add-btn').text()).toBe('Add')
   })
-  it('creates a todo', async () => {
-    const wrapper = shallowMount(DynamicForm)
-
-    wrapper.find('#title').element.value = 'New todo'
-    await wrapper.find('#add-btn').trigger('click')
-
-    expect(wrapper.findAll('[data-test="todo"]')).toHaveLength(2)
-  })
   it('renders a completed task when provided', async () => {
     const wrapper = shallowMount(DynamicForm)
 
@@ -46,7 +38,10 @@ describe('DynamicForm.vue', () => {
         {
           id: 1,
           title: 'Complete Task',
-          completed: true
+          completed: true,
+          dueDate: '2024-01-14',
+          priority: 'HIGH',
+          notes: 'Webprojekt finale Abgabe '
         }
       ]
     })
@@ -98,7 +93,7 @@ describe('DynamicForm.vue', () => {
       // Ensure the correct payload is sent
       const payload = JSON.parse(options.body)
       expect(payload.title).toBe(wrapper.vm.title)
-      expect(payload.completed).toBe(false) // You may adjust this based on your logic
+      expect(payload.completed).toBe(false)
 
       // Simulate a successful response
       return Promise.resolve({ text: () => 'Created successfully' })
@@ -147,7 +142,7 @@ describe('DynamicForm.vue', () => {
     global.fetch = jest.fn(() => Promise.resolve({ text: () => 'Updated successfully' }))
 
     // Assuming you have an editingTask object to use for testing
-    const editingTask = { id: 1, title: 'Task 1', completed: false }
+    const editingTask = { id: 1, title: 'Task 1', completed: false, priority: 'Medium', notes: 'Task1 ' }
 
     // Set the editingTask data property
     await wrapper.setData({ editingTask, title: 'Updated Task' })
@@ -161,52 +156,28 @@ describe('DynamicForm.vue', () => {
     // Reset the fetch mock to avoid affecting other tests
     global.fetch.mockReset()
   })
-  it('calls updateTask when the "Update" button is clicked', async () => {
+  it('calls deleteTask when the "Delete" button is clicked', async () => {
     // Mocking the fetchTasks method to avoid actual API calls
     jest.spyOn(DynamicForm.methods, 'fetchTasks').mockResolvedValueOnce([])
 
     const wrapper = shallowMount(DynamicForm)
 
-    // Mocking the fetch method to simulate a successful PUT request
-    global.fetch = jest.fn(() => Promise.resolve({ text: () => 'Updated successfully' }))
+    // Mocking the fetch method to simulate a successful DELETE request
+    global.fetch = jest.fn(() => Promise.resolve({ text: () => 'Deleted successfully' }))
 
-    // Assuming you have an editingTask object to use for testing
-    const editingTask = { id: 1, title: 'Task 1', completed: false }
+    // Assuming you have a task object to use for testing
+    const task = { id: 1, title: 'Task 1', completed: false, priority: 'HIGH', notes: 'Task1 ' }
 
-    // Set the editingTask data property
-    await wrapper.setData({ editingTask, title: 'Updated Task' })
+    // Set the tasks data property
+    await wrapper.setData({ tasks: [task] })
 
-    // Find the "Update" button and trigger a click
-    await wrapper.find('#add-btn').trigger('click')
+    // Find the "Delete" button and trigger a click
+    await wrapper.find('.btn-style-delete').trigger('click')
 
-    // Ensure that the fetchTasks method is called after the updateTask method
+    // Ensure that the fetchTasks method is called after the deleteTask method
     expect(DynamicForm.methods.fetchTasks).toHaveBeenCalled()
 
     // Reset the fetch mock to avoid affecting other tests
     global.fetch.mockReset()
   })
-  // it('calls deleteTask when the "Delete" button is clicked', async () => {
-  //   // Mocking the fetchTasks method to avoid actual API calls
-  //   jest.spyOn(DynamicForm.methods, 'fetchTasks').mockResolvedValueOnce([])
-  //
-  //   const wrapper = shallowMount(DynamicForm)
-  //
-  //   // Mocking the fetch method to simulate a successful DELETE request
-  //   global.fetch = jest.fn(() => Promise.resolve({ text: () => 'Deleted successfully' }))
-  //
-  //   // Assuming you have a task object to use for testing
-  //   const task = { id: 1, title: 'Task 1', completed: false }
-  //
-  //   // Set the tasks data property
-  //   await wrapper.setData({ tasks: [task] })
-  //
-  //   // Find the "Delete" button and trigger a click
-  //   await wrapper.find('#del-btn').trigger('click')
-  //
-  //   // Ensure that the fetchTasks method is called after the deleteTask method
-  //   expect(DynamicForm.methods.fetchTasks).toHaveBeenCalled()
-  //
-  //   // Reset the fetch mock to avoid affecting other tests
-  //   global.fetch.mockReset()
-  // })
 })

@@ -1,7 +1,11 @@
 <template>
-  <main>
-    <DynamicForm title="Welcome to your Vue.js App"/>
-  </main>
+  <div class="App-page">
+
+    <h1 class="App-title">Todo App</h1>
+    <main>
+      <DynamicForm title="Welcome to your Vue.js App"/>
+    </main>
+  </div>
 </template>
 
 <script>
@@ -15,5 +19,10 @@ export default {
 </script>
 
 <style scoped>
-
+.App-title{
+  font-size: 52px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 3px 3px 10px black;
+}
 </style>

@@ -1,72 +1,109 @@
 <template>
+  <div>
+    <div :class ="'sidebar ' + rightPostion">
+      <TaskEditor :id="selectedTask" />
+
+    </div>
   <div class="app">
-    <div class="container">
-      <div id="wrapper">
-        <input type="text"  data-test="todo" class="form-control is-invalid" id="title" placeholder="Task to be Done.." v-model="title"  />
-        <button id="add-btn" @click="editingTask ? updateTask() : createTask()">
-          {{ editingTask ? 'Update' : 'Add' }}
-        </button>
-        <div v-if="errorVisible" class="error-message">
-          Task title cannot be empty.
-        </div>
-      </div>
-      <div id="tasks">
-        <ul class="list-group" v-for="task in tasks" :key="task.id">
-          <li class="list-group-item d-flex align-items-center flex-wrap flex-basis-0">
-            <input
-                class="form-check-input me-1"
-                type="checkbox"
-                data-test="todo-checkbox"
-                id="title"
-                v-model="task.completed"
-                @change="updateTaskStatus(task)"
-                required />
-            <div class="invalid-feedback">
-              Please provide a task.
-            </div>
-            <label class="form-check-label"  :class="{ 'completed-task': task.completed }" for="tasks">
-              {{ task.title }}
-            </label>
-            <div class="buttons d-flex justify-content: center flex-basis: auto; margin-left: 0; margin-right: 0;">
-              <button id="edit-btn" @click="editTask(task)">Edit</button>
-              <button id="del-btn" @click="deleteTask(task.id)">Delete</button>
-            </div>
-          </li>
-        </ul>
-      </div>
+    <div id="search-wrapper">
+      <input id="search-input" data-test="todo" v-model="filterCrit" placeholder="search">
+    </div>
+    <div id="wrapper">
+      <input type="text" data-test="todo" class="form-control is-invalid" id="title" placeholder="Task to be Done.." v-model="title" />
+      <button id="add-btn" @click="createTask()">Add</button>
+    </div>
+    <div id="tasks" class="scrool">
+      <ul class="list-group" v-for="task in filteredTasks" :key="task.id">
+        <li @click="toggleSidebar(task.id)" class="list-group-item d-flex align-items-center flex-wrap flex-basis-0">
+          <!-- Checkbox und Invalid-Feedback -->
+          <input
+              class="form-check-input me-1"
+              type="checkbox"
+              data-test="todo-checkbox"
+              id="title"
+              v-model="task.completed"
+              @change="updateTaskStatus(task)"
+              required
+          />
+          <div class="invalid-feedback">
+            Please provide a task.
+          </div>
+
+          <!-- Label für die Aufgabe -->
+          <label v-if="editingTask !== task" class="form-check-label" :class="{ 'completed-task': task.completed }" for="tasks">
+            {{ task.title.length > 40 ? task.title.substring(0, 40) + '...' : task.title }}
+          </label>
+
+          <!-- Eingabefeld während der Bearbeitung -->
+          <input
+              v-else
+              type="text"
+              class="form-control"
+              v-model="title"
+          />
+
+          <!-- Bearbeitungs- und Löschen-Buttons -->
+          <div class="buttons">
+            <button v-if="editingTask !== task" @click="editTask(task)">Edit</button>
+            <button @click="deleteTask(task)">Delete</button>
+            <button v-if="editingTask === task" @click="cancelEdit">Cancel</button>
+            <button v-if="editingTask === task" @click="updateTask">Save</button>
+          </div>
+        </li>
+      </ul>
     </div>
   </div>
+  </div>
 </template>
+<script >
 
-<script>
+import TaskEditor from '@/components/TaskEditor.vue'
 export default {
   name: 'DynamicForm',
+  components: { TaskEditor },
   data () {
     return {
       title: '',
       completed: false,
-      errorVisible: false,
       tasks: [],
-      editingTask: null
+      filterCrit: '',
+      editingTask: null,
+      dueDate: null,
+      priority: '',
+      notes: '',
+      selectedTask: 0,
+      rightPostion: 'close'
+
+    }
+  },
+  computed: {
+    filteredTasks: function () {
+      const crit = this.filterCrit.toLowerCase()
+      return this.tasks.filter(task => crit.length < 1 || task.title.toLowerCase().includes(crit))
     }
   },
   methods: {
+    toggleSidebar (id) {
+      this.selectedTask = id
+      this.rightPostion = this.rightPostion === 'open' ? 'closed' : 'open'
+    },
     async createTask () {
       try {
-        if (!this.title.trim()) {
-          console.log('Error: Task title is empty.')
-          this.errorVisible = true
+        const trimmedTitle = this.title.trim().substring(0, 40)
+
+        if (this.title.trim().length > 60) {
+          alert('Error: Task title should not exceed 60 characters.')
           return
         }
+
         const endpoint = process.env.VUE_APP_BACKEND_BASE_URL + '/api/a1/task'
         const myHeaders = new Headers()
         myHeaders.append('Content-Type', 'application/json')
 
         const payload = JSON.stringify({
-          title: this.title,
-          completed: this.completed // Hier wird das completed-Attribut auf this.completed gesetzt
+          title: trimmedTitle,
+          completed: this.completed
         })
-
         const requestOptions = {
           method: 'POST',
           headers: myHeaders,
@@ -77,7 +114,6 @@ export default {
         const response = await fetch(endpoint, requestOptions)
         const result = await response.text()
         console.log(result)
-        this.errorVisible = false
         // Nach dem Hinzufügen sofort die Tasks aktualisieren
         this.fetchTasks()
         this.title = ''
@@ -101,21 +137,24 @@ export default {
       console.log(result)
       this.fetchTasks()
     },
-    async editTask (task) {
-      console.log('Editing task:', task)
-      this.editingTask = task
-      this.title = task.title
-      this.completed = task.completed
-    },
     async updateTask () {
       try {
+        const trimmedTitle = this.title.trim().substring(0, 40)
+
+        if (this.title.trim().length > 60) {
+          alert('Error: Task title should not exceed 60 characters.')
+          return
+        }
+
         const endpoint = `${process.env.VUE_APP_BACKEND_BASE_URL}/api/a1/task/${this.editingTask.id}`
         const myHeaders = new Headers()
         myHeaders.append('Content-Type', 'application/json')
-
         const payload = JSON.stringify({
-          title: this.title,
-          completed: this.editingTask.completed
+          title: trimmedTitle,
+          completed: this.completed,
+          dueDate: this.dueDate,
+          priority: this.priority,
+          notes: this.notes
         })
 
         const requestOptions = {
@@ -139,6 +178,10 @@ export default {
         console.error('Error updating task:', error)
       }
     },
+    editTask (task) {
+      this.editingTask = task
+      this.title = task.title
+    },
     async updateTaskStatus (task) {
       try {
         const endpoint = `${process.env.VUE_APP_BACKEND_BASE_URL}/api/a1/task/${task.id}`
@@ -160,12 +203,16 @@ export default {
         const response = await fetch(endpoint, requestOptions)
         const result = await response.text()
         console.log(result)
-
-        // Nach dem Aktualisieren sofort die Tasks aktualisieren
         await this.fetchTasks()
       } catch (error) {
         console.error('Error updating task status:', error)
       }
+    },
+    cancelEdit () {
+      // Setzen Sie den zu bearbeitenden Task auf null, um die Bearbeitung zu beenden
+      this.editingTask = null
+
+      this.title = ''
     },
     async fetchTasks () {
       try {
@@ -179,21 +226,38 @@ export default {
     }
   },
 
-  mounted () {
-    this.fetchTasks()
+  async mounted () {
+    await this.fetchTasks()
   }
 }
 </script>
 
-<style scoped>
+<style>
 * {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
 }
-
+#app{
+  max-height: 100vh;
+  overflow: hidden;
+}
+.sidebar {
+  background-color: #eee;
+  padding: 10px 20px;
+  position: fixed;
+  right: -500px;
+  top: 0;
+  height: 100%;
+  width: 400px;
+  z-index: 100;
+  transition: all 0.8s ease-in-out;
+}
+.open {
+  right: 0;
+}
 .app {
-  min-height: 100vh;
+  max-height: 100vh;
   background: linear-gradient(white, white);
   font-family: "Poppins", sans-serif;
   width: min(95vw, 31.25em);
@@ -202,12 +266,6 @@ export default {
   top: 1.857em;
 }
 
-.container {
-  padding: 2em 2.5em;
-  background-color: #f1f8fb;
-  box-shadow: 0 1em 2em rgba(0, 0, 0, 0.3);
-  border-radius: 0.8em;
-}
 #wrapper {
   display: grid;
   grid-template-columns: 8fr 4fr;
@@ -242,21 +300,10 @@ export default {
 #tasks {
   margin-top: 1em;
 }
-.error-message {
-  text-align: center;
-  background-color: white;
-  margin-top: 0.5em;
-  padding:1em 0;
-  color: red;
-  border-radius: 0.8em;
-}
-
-#pending-tasks {
-  color: #111111;
-}
 .list-group {
   flex-wrap: wrap;
   flex-basis: 0;
+  margin-bottom: 10px !important
 }
 .list-group-item {
   display: flex;
@@ -268,16 +315,35 @@ export default {
   width: 100%;
   margin: -23px 0 0.1rem 3rem;
 }
-.list-group-item {
-  margin-bottom: 1rem;
-}
-
 .form-check-label{
   margin-left: 2rem;
-  margin-top: 1rem;
+  margin-top: 0.3rem;
   position: relative;
+  white-space: pre-wrap;
 }
 .completed-task{
   text-decoration: line-through;
+}
+#search-input {
+  border-bottom: 2px solid #d1d3d4;
+  outline: none;
+  margin-left: -230%;
+}
+.scrool{
+  height: calc(100vh - 180px);
+  overflow-y: scroll;
+  padding: 10px 10px;
+}
+/* Customize scrollbar appearance */
+.scrool::-webkit-scrollbar {
+  width: 12px; /* Set the width of the scrollbar */
+}
+
+.scrool::-webkit-scrollbar-thumb {
+  background-color: #888; /* Set the color of the scrollbar thumb */
+}
+
+.scrool::-webkit-scrollbar-track {
+  background-color: #eee; /* Set the color of the scrollbar track */
 }
 </style>

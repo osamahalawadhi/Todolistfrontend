@@ -6,6 +6,7 @@
 
 <script>
 import DynamicForm from '../components/DynamicForm.vue'
+
 export default {
   components: {
     DynamicForm
